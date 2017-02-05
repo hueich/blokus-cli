@@ -36,7 +36,7 @@ func renderBoard(b *blokus.Board) {
 	}
 }
 
-func promptForNewPlayers(g *blokus.Game) {
+func promptForNewPlayers(g *blokus.Game) error {
 	numPlayers := 0
 	for numPlayers < 2 || numPlayers > 4 {
 		fmt.Printf("How many players? [2-4]: ")
@@ -50,6 +50,42 @@ func promptForNewPlayers(g *blokus.Game) {
 		}
 	}
 	fmt.Printf("Setting up a %d player game.\n", numPlayers)
+
+	// Counter-clockwise order from top left.
+	startPositions := []blokus.Coord{
+		{0,0},
+		{0,len(g.Board().Grid()[0])-1},
+		{len(g.Board().Grid())-1,len(g.Board().Grid()[0])-1},
+		{len(g.Board().Grid())-1,0},
+	}
+	fmt.Println(startPositions)
+	if numPlayers == 2 {
+		// Make 2nd player start diagonally across from first player.
+		startPositions = append(startPositions[:1], startPositions[2])
+	}
+
+	for i := 1; i <= numPlayers; i++ {
+		var name string
+		for name == "" {
+			fmt.Printf("Enter name of player %d: ", i)
+			if _, err := fmt.Scanln(&name); err != nil {
+				fmt.Println("Sorry, I didn't catch the name.")
+				continue
+			}
+			name = strings.TrimSpace(name)
+			if name == "" {
+				fmt.Println("Sorry, the name can't be empty.")
+				continue
+			}
+		}
+		color := blokus.Color(i)
+		startPos := startPositions[i-1]
+		if err := g.AddPlayer(name, color, startPos); err != nil {
+			return err
+		}
+		fmt.Printf("Player \033[1m%s\033[0m is color %v and will start at coordinate %v\n", name, color, startPos)
+	}
+	return nil
 }
 
 func main() {
@@ -68,13 +104,8 @@ func main() {
 		log.Fatalf("Could not create new game: %v", err)
 	}
 
-	promptForNewPlayers(g)
-
-	if err := g.AddPlayer("Bob", blokus.Blue, blokus.Coord{0, 0}); err != nil {
-		log.Fatalf("Could not add player: %v", err)
-	}
-	if err := g.AddPlayer("Yeti", blokus.Yellow, blokus.Coord{19, 19}); err != nil {
-		log.Fatalf("Could not add player: %v", err)
+	if err := promptForNewPlayers(g); err != nil {
+		log.Fatal(err.Error())
 	}
 
 	renderBoard(g.Board())

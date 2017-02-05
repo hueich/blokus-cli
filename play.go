@@ -36,7 +36,25 @@ func renderBoard(b *blokus.Board) {
 	}
 }
 
+func promptForNewPlayers(g *blokus.Game) {
+	numPlayers := 0
+	for numPlayers < 2 || numPlayers > 4 {
+		fmt.Printf("How many players? [2-4]: ")
+		if _, err := fmt.Scanln(&numPlayers); err != nil {
+			fmt.Println("Sorry, I don't know what that number is.")
+			continue
+		}
+		if numPlayers < 2 || numPlayers > 4 {
+			fmt.Println("Sorry, this game can only have 2 to 4 players.")
+			continue
+		}
+	}
+	fmt.Printf("Setting up a %d player game.\n", numPlayers)
+}
+
 func main() {
+	fmt.Println("Welcome to the game!")
+
 	pieces := make([]*blokus.Piece, 0)
 	var p *blokus.Piece
 	p, err := blokus.NewPiece([]blokus.Coord{blokus.Coord{0, 0}})
@@ -49,6 +67,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("Could not create new game: %v", err)
 	}
+
+	promptForNewPlayers(g)
 
 	if err := g.AddPlayer("Bob", blokus.Blue, blokus.Coord{0, 0}); err != nil {
 		log.Fatalf("Could not add player: %v", err)

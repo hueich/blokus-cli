@@ -8,19 +8,26 @@ import (
 	"github.com/hueich/blokus"
 )
 
-func getColorSymbol(c blokus.Color) string {
+func getColorAsciiCode(c blokus.Color) int {
 	switch c {
 	case blokus.Blue:
-		return "\033[1;34mB\033[0m"
+		return 34
 	case blokus.Yellow:
-		return "\033[1;33mY\033[0m"
+		return 33
 	case blokus.Red:
-		return "\033[1;31mR\033[0m"
+		return 31
 	case blokus.Green:
-		return "\033[1;32mG\033[0m"
+		return 32
 	default:
+		return 0
+	}
+}
+
+func getColorTermSymbol(c blokus.Color) string {
+	if !c.IsColored() {
 		return " "
 	}
+	return fmt.Sprintf("\033[1;%dm%c\033[0m", getColorAsciiCode(c), strings.ToUpper(c.String())[0])
 }
 
 func renderBoard(b *blokus.Board) {
@@ -29,7 +36,7 @@ func renderBoard(b *blokus.Board) {
 	for _, r := range b.Grid() {
 		fmt.Print("|")
 		for _, c := range r {
-			fmt.Printf(" %v |", getColorSymbol(c))
+			fmt.Printf(" %v |", getColorTermSymbol(c))
 		}
 		fmt.Println("")
 		fmt.Println(div)

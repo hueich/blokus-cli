@@ -1,12 +1,12 @@
 package main
 
 import (
-	"os"
 	"bufio"
 	"fmt"
 	"log"
-	"strings"
+	"os"
 	"strconv"
+	"strings"
 
 	"github.com/hueich/blokus"
 )
@@ -74,10 +74,10 @@ func promptForNewPlayers(g *blokus.Game) error {
 
 	// Counter-clockwise order from top left.
 	startPositions := []blokus.Coord{
-		{0,0},
-		{0,len(g.Board().Grid()[0])-1},
-		{len(g.Board().Grid())-1,len(g.Board().Grid()[0])-1},
-		{len(g.Board().Grid())-1,0},
+		{0, 0},
+		{0, len(g.Board().Grid()[0]) - 1},
+		{len(g.Board().Grid()) - 1, len(g.Board().Grid()[0]) - 1},
+		{len(g.Board().Grid()) - 1, 0},
 	}
 	if numPlayers == 2 {
 		// Make 2nd player start diagonally across from first player.

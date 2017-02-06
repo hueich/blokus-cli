@@ -177,15 +177,7 @@ func promptForNextMove(g *blokus.Game) error {
 func main() {
 	fmt.Println("Welcome to the game!")
 
-	pieces := make([]*blokus.Piece, 0)
-	var p *blokus.Piece
-	p, err := blokus.NewPiece([]blokus.Coord{blokus.Coord{0, 0}})
-	if err != nil {
-		log.Fatalf("Could not create piece: %v\n", err)
-	}
-	pieces = append(pieces, p)
-
-	g, err := blokus.NewGame(1, blokus.DefaultBoardSize, pieces)
+	g, err := blokus.NewGame(1, blokus.DefaultBoardSize, blokus.DefaultPieces())
 	if err != nil {
 		log.Fatalf("Could not create new game: %v\n", err)
 	}

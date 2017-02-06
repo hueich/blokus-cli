@@ -1,14 +1,17 @@
 package main
 
 import (
+	// "bytes"
 	"bufio"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"strconv"
 	"strings"
 
 	"github.com/hueich/blokus"
+	"github.com/jroimartin/gocui"
 )
 
 func getColorAsciiCode(c blokus.Color) int {
@@ -37,16 +40,16 @@ func highlightString(s string) string {
 	return fmt.Sprintf("\033[1m%s\033[0m", s)
 }
 
-func renderBoard(b *blokus.Board) {
-	div := fmt.Sprintf("+%s", strings.Repeat("---+", len(b.Grid())))
-	fmt.Println(div)
+func renderBoard(out io.Writer, b *blokus.Board) {
+	div := fmt.Sprintf(" +%s", strings.Repeat("---+", len(b.Grid())))
+	fmt.Fprintln(out, div)
 	for _, r := range b.Grid() {
-		fmt.Print("|")
+		fmt.Fprint(out, " |")
 		for _, c := range r {
-			fmt.Printf(" %v |", getColorTermSymbol(c))
+			fmt.Fprintf(out, " %v |", getColorTermSymbol(c))
 		}
-		fmt.Println("")
-		fmt.Println(div)
+		fmt.Fprintln(out, "")
+		fmt.Fprintln(out, div)
 	}
 }
 
@@ -174,6 +177,45 @@ func promptForNextMove(g *blokus.Game) error {
 	return nil
 }
 
+// func setupHandlers(g *blokus.Game) {
+//     // handle key q pressing
+//     termui.Handle("/sys/kbd/q", func(termui.Event) {
+//         // press q to quit
+//         termui.StopLoop()
+//         termui.Close()
+//     })
+// }
+
+// func render(g *blokus.Game) {
+// 	var buf bytes.Buffer
+// 	renderBoard(&buf, g.Board())
+// 	b := termui.NewPar(strings.TrimSpace(buf.String()))
+// 	b.Height = 2*(len(g.Board().Grid())+1)+1
+// 	b.Width = 4*(len(g.Board().Grid()[0])+1)-1
+// 	b.BorderLabel = "Board"
+
+// 	termui.Render(b)
+// }
+
+type boardLayoutManager struct {
+	game *blokus.Game
+}
+
+func (m *boardLayoutManager) Layout(g *gocui.Gui) error {
+    if v, err := g.SetView("Board", 0, 0, 4*(len(m.game.Board().Grid()[0])+1), 2*(len(m.game.Board().Grid())+1)); err != nil {
+        if err != gocui.ErrUnknownView {
+            return err
+        }
+        v.Clear()
+        renderBoard(v, m.game.Board())
+    }
+    return nil
+}
+
+func quit(g *gocui.Gui, v *gocui.View) error {
+    return gocui.ErrQuit
+}
+
 func main() {
 	fmt.Println("Welcome to the game!")
 
@@ -186,15 +228,35 @@ func main() {
 		log.Fatal(err.Error())
 	}
 
-	for !g.IsGameEnd() {
-		renderBoard(g.Board())
-		if err := promptForNextMove(g); err != nil {
-			log.Fatalf("Could not process next move: %v\n", err)
-		}
-		if err := g.AdvanceTurn(); err != nil {
-			log.Fatalf("Could not advance turn: %v\n", err)
-		}
-	}
+    gui, err := gocui.NewGui(gocui.OutputNormal)
+    if err != nil {
+		log.Fatalf("Could not initialize GUI: %v\n", err)
+    }
+    defer gui.Close()
+
+    m := &boardLayoutManager{g}
+	gui.SetManager(m)
+
+    if err := gui.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, quit); err != nil {
+        log.Fatalf("Could not set key binding for ctrl+c: %v\n", err)
+    }
+    if err := gui.SetKeybinding("", 'q', gocui.ModNone, quit); err != nil {
+        log.Fatalf("Could not set key binding for q: %v\n", err)
+    }
+
+    if err := gui.MainLoop(); err != nil && err != gocui.ErrQuit {
+        log.Fatalf("Did not exit normally: %v\n", err)
+    }
+
+	// for !g.IsGameEnd() {
+	// 	renderBoard(g.Board())
+	// 	if err := promptForNextMove(g); err != nil {
+	// 		log.Fatalf("Could not process next move: %v\n", err)
+	// 	}
+	// 	if err := g.AdvanceTurn(); err != nil {
+	// 		log.Fatalf("Could not advance turn: %v\n", err)
+	// 	}
+	// }
 
 	// TODO: Display score
 

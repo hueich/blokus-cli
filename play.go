@@ -38,11 +38,11 @@ func highlightString(s string) string {
 }
 
 func renderBoard(b *blokus.Board) {
-	div := fmt.Sprintf("+%s", strings.Repeat("---+", len(b.Grid())))
+	div := fmt.Sprintf("+%s", strings.Repeat("---+", b.Width))
 	fmt.Println(div)
-	for _, r := range b.Grid() {
+	for r := 0; r < b.Height; r++ {
 		fmt.Print("|")
-		for _, c := range r {
+		for _, c := range b.Row(r) {
 			fmt.Printf(" %v |", getColorTermSymbol(c))
 		}
 		fmt.Println("")
@@ -75,9 +75,9 @@ func promptForNewPlayers(g *blokus.Game) error {
 	// Counter-clockwise order from top left.
 	startPositions := []blokus.Coord{
 		{0, 0},
-		{0, len(g.Board().Grid()[0]) - 1},
-		{len(g.Board().Grid()) - 1, len(g.Board().Grid()[0]) - 1},
-		{len(g.Board().Grid()) - 1, 0},
+		{0, g.Board.Width - 1},
+		{g.Board.Height - 1, g.Board.Width - 1},
+		{g.Board.Height - 1, 0},
 	}
 	if numPlayers == 2 {
 		// Make 2nd player start diagonally across from first player.
@@ -118,7 +118,7 @@ func promptForNextMove(g *blokus.Game) error {
 
 	var input string
 	for true {
-		fmt.Printf("It's player %s's turn. Which piece do you want to play? (Type 'pass' to pass your turn): ", highlightString(player.Name()))
+		fmt.Printf("It's player %s's turn. Which piece do you want to play? (Type 'pass' to pass your turn): ", highlightString(player.Name))
 		if err := fscanln(stdin, &input); err != nil {
 			fmt.Println("Sorry, I didn't understand that.")
 			continue
@@ -130,7 +130,7 @@ func promptForNextMove(g *blokus.Game) error {
 				fmt.Printf("Sorry, I couldn't pass the player's turn. %v\n", err)
 				continue
 			}
-			fmt.Printf("Passing %s's turn.\n", highlightString(player.Name()))
+			fmt.Printf("Passing %s's turn.\n", highlightString(player.Name))
 			break
 		}
 
@@ -168,7 +168,7 @@ func promptForNextMove(g *blokus.Game) error {
 			fmt.Printf("Sorry, I couldn't place that piece. %v\n", err)
 			continue
 		}
-		fmt.Printf("Player %s has placed piece %d.\n", highlightString(player.Name()), i)
+		fmt.Printf("Player %s has placed piece %d.\n", highlightString(player.Name), i)
 		break
 	}
 	return nil
@@ -177,7 +177,7 @@ func promptForNextMove(g *blokus.Game) error {
 func main() {
 	fmt.Println("Welcome to the game!")
 
-	g, err := blokus.NewGame(1, blokus.DefaultBoardSize, blokus.DefaultPieces())
+	g, err := blokus.NewGame(blokus.DefaultBoardSize, blokus.DefaultPieces())
 	if err != nil {
 		log.Fatalf("Could not create new game: %v\n", err)
 	}
@@ -187,7 +187,7 @@ func main() {
 	}
 
 	for !g.IsGameEnd() {
-		renderBoard(g.Board())
+		renderBoard(g.Board)
 		if err := promptForNextMove(g); err != nil {
 			log.Fatalf("Could not process next move: %v\n", err)
 		}
